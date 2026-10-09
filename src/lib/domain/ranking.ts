@@ -44,11 +44,13 @@ export interface PodiumGroup {
  * Groups ranked players by podium step. With ties, a step can hold several
  * players and a lower step can be empty (two winners tie for 1st → no 2nd).
  * Steps with no players are omitted, so fewer than three players works.
+ * Only players who scored points can stand on the podium: a medal for 0 points
+ * would be misleading, and if nobody scored the podium is simply empty.
  */
 export function buildPodium(ranked: readonly RankedStanding[]): PodiumGroup[] {
   const groups: PodiumGroup[] = [];
   for (const rank of [1, 2, 3] as const) {
-    const players = ranked.filter((p) => p.rank === rank);
+    const players = ranked.filter((p) => p.rank === rank && p.score > 0);
     if (players.length === 0) continue;
     groups.push({
       rank,

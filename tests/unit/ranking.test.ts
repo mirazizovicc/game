@@ -45,6 +45,12 @@ describe("buildPodium", () => {
     expect(podium.map((g) => [g.rank, g.players.map((p) => p.nickname)])).toEqual([[1, ["a"]], [2, ["b"]], [3, ["c"]]]);
   });
 
+  it("gives no medal for zero points (nobody scored → empty podium)", () => {
+    expect(buildPodium(rankStandings([s("a", 0), s("b", 0)]))).toEqual([]);
+    const podium = buildPodium(rankStandings([s("a", 500), s("b", 0), s("c", 0)]));
+    expect(podium.map((g) => [g.rank, g.players.map((p) => p.nickname)])).toEqual([[1, ["a"]]]);
+  });
+
   it("works with fewer than three players", () => {
     expect(buildPodium(rankStandings([s("a", 1000)])).map((g) => g.rank)).toEqual([1]);
     expect(buildPodium(rankStandings([s("a", 1000), s("b", 500)])).map((g) => g.rank)).toEqual([1, 2]);
@@ -57,7 +63,7 @@ describe("buildPodium", () => {
   });
 
   it("caps the names per step and reports how many are hidden", () => {
-    const many = Array.from({ length: 9 }, (_, i) => s(`p${i}`, 0));
+    const many = Array.from({ length: 9 }, (_, i) => s(`p${i}`, 100));
     const [first] = buildPodium(rankStandings(many));
     expect(first?.players).toHaveLength(4);
     expect(first?.hiddenCount).toBe(5);

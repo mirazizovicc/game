@@ -659,7 +659,25 @@ export function serviceSuite(name: string, create: () => Promise<StoreFixture>) 
         await act(pin, host, "advance");
         const view = await hostView(pin, host);
         expect(view.standings?.map((s) => [s.nickname, s.rank])).toEqual([["Twin A", 1], ["Twin B", 1], ["Solo C", 3]]);
-        expect(view.podium?.map((g) => g.rank)).toEqual([1, 3]);
+        // Co-winners share the gold step; Solo C scored nothing, so there is no bronze.
+        expect(view.podium?.map((g) => [g.rank, g.players.map((p) => p.nickname)])).toEqual([[1, ["Twin A", "Twin B"]]]);
+      });
+
+      it("gives a shared 3rd place its own bronze step when ranks 1 and 2 are taken", async () => {
+        const { pin, host } = await newGame();
+        const a = await join(pin, "Gold");
+        const b = await join(pin, "Silver");
+        const c = await join(pin, "Bronze");
+        await startAndOpen(pin, host);
+        for (let q = 0; q < 7; q += 1) {
+          await answer(pin, a, q, CORRECT[q]!);
+          await answer(pin, b, q, q < 4 ? CORRECT[q]! : WRONG[q]!);
+          await answer(pin, c, q, q < 1 ? CORRECT[q]! : WRONG[q]!);
+          if (q < 6) await nextQuestion(pin, host);
+        }
+        await act(pin, host, "advance");
+        const view = await hostView(pin, host);
+        expect(view.podium?.map((g) => [g.rank, g.players.map((p) => p.nickname)])).toEqual([[1, ["Gold"]], [2, ["Silver"]], [3, ["Bronze"]]]);
       });
 
       it("works with fewer than three players", async () => {
